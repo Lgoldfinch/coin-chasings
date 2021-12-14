@@ -1,3 +1,4 @@
+import sbt.Keys.testFrameworks
 import sbt._
 
 object Dependencies {
@@ -40,6 +41,13 @@ object Dependencies {
     "io.circe" %% "circe-refined"
   ).map(_ % Version.Circe)
 
+  val Http4s = List(
+    "org.http4s"      %% "http4s-ember-server",
+    "org.http4s"      %% "http4s-ember-client",
+    "org.http4s"      %% "http4s-circe",
+    "org.http4s"      %% "http4s-dsl"
+  ).map(_ % Version.Http4s)
+
   val NewType = List(
     "io.estatico" %% "newtype" % Version.NewType
   )
@@ -57,6 +65,10 @@ object Dependencies {
     "eu.timepit" %% "refined" % Version.Refined
   )
 
+  val Logback = List(
+    "ch.qos.logback"  %  "logback-classic"     % "1.2.6"
+  )
+
   // Test
   val CatsEffectTest = List(
     "org.typelevel" %% "munit-cats-effect-3" % Version.CatsEffectTest
@@ -66,7 +78,7 @@ object Dependencies {
     "com.alejandrohdezma" %% "http4s-munit" % Version.Http4sTest
   )
 
-  val MunitTest = List(
+ val MunitTest = List(
     "org.scalameta" %% "munit"              % Version.MunitTest,
     "org.scalameta" %% "munit-scalacheck"   % Version.MunitTest,
     "eu.timepit"    %% "refined-scalacheck" % Version.Refined
@@ -80,4 +92,7 @@ object Dependencies {
 
   val BetterMonadicFor = "com.olegpy" %% "better-monadic-for" % Version.BetterMonadicFor
   val OrganizeImports = "com.github.liancheng" %% "organize-imports" % Version.OrganizeImports
+
+
+//  testFrameworks += new TestFramework("munit.Framework")
 }
