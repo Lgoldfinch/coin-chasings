@@ -44,6 +44,8 @@ object Dependencies {
   val Http4s = List(
     "org.http4s"      %% "http4s-ember-server",
     "org.http4s"      %% "http4s-ember-client",
+//    "org.http4s" %% "http4s-blaze-server",
+//    "org.http4s" %% "http4s-blaze-client",
     "org.http4s"      %% "http4s-circe",
     "org.http4s"      %% "http4s-dsl"
   ).map(_ % Version.Http4s)

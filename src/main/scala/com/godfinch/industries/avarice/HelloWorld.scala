@@ -19,7 +19,9 @@ object HelloWorld {
     * your internal data structures, however this shows how you can
     * create encoders for your data.
     **/
+
   final case class Greeting(greeting: String) extends AnyVal
+
   object Greeting {
     implicit val greetingEncoder: Encoder[Greeting] = new Encoder[Greeting] {
       final def apply(a: Greeting): Json = Json.obj(
@@ -34,4 +36,5 @@ object HelloWorld {
     def hello(n: HelloWorld.Name): F[HelloWorld.Greeting] =
         Greeting("Hello, " + n.name).pure[F]
   }
+
 }
