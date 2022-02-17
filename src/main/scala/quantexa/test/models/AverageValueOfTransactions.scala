@@ -6,10 +6,10 @@ import io.chrisdavenport.cormorant.generic.semiauto._
 import io.chrisdavenport.cormorant.parser._
 import io.chrisdavenport.cormorant.implicits._
 
-final case class BigModel(accountId: String, averageValue: Float, transactionType: String)
+final case class AverageValueOfTransactions(accountId: String, averageValue: Float, transactionType: String)
 
-object BigModel {
-    implicit val lw: LabelledWrite[BigModel] = deriveLabelledWrite
+object AverageValueOfTransactions {
+    implicit val lw: LabelledWrite[AverageValueOfTransactions] = deriveLabelledWrite
 }
 
 sealed trait TransactionCategory extends EnumEntry
