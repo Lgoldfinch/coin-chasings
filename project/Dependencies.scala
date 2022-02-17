@@ -8,6 +8,8 @@ object Dependencies {
     val Circe = "0.14.1"
     val CatsEffect        = "3.3.0"
     val Doobie = "1.0.0-RC1"
+    val CormorantCSV  = "0.5.0-M1"
+
     val Enumeratum = "1.7.0"
     val Http4s = "0.23.6"
     val PureConfig = "0.17.0"
@@ -40,6 +42,17 @@ object Dependencies {
     "io.circe" %% "circe-generic-extras",
     "io.circe" %% "circe-refined"
   ).map(_ % Version.Circe)
+
+  val Doobie = List(
+    "org.tpolecat" %% "doobie-core",
+    "org.tpolecat" %% "doobie-postgres",
+    "org.tpolecat" %% "doobie-refined"
+  ).map(_ % Version.Doobie)
+
+  val Enumeratum = List(
+    "com.beachape" %% "enumeratum"       % Version.Enumeratum,
+    "com.beachape" %% "enumeratum-circe" % Version.Enumeratum
+  )
 
   val Http4s = List(
     "org.http4s"      %% "http4s-ember-server",
@@ -75,6 +88,15 @@ object Dependencies {
   val CatsEffectTest = List(
     "org.typelevel" %% "munit-cats-effect-3" % Version.CatsEffectTest
   )
+
+  val CormorantCSV = List(
+    "io.chrisdavenport" %% "cormorant-core"   ,
+    "io.chrisdavenport" %% "cormorant-http4s" ,
+    "io.chrisdavenport" %% "cormorant-generic",
+    "io.chrisdavenport" %% "cormorant-refined",
+    "io.chrisdavenport" %% "cormorant-parser"
+
+  ).map(_ % Version.CormorantCSV)
 
   val Http4sTest = List(
     "com.alejandrohdezma" %% "http4s-munit" % Version.Http4sTest
