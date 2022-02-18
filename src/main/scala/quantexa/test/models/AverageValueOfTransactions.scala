@@ -12,6 +12,9 @@ object AverageValueOfTransactions {
     implicit val lw: LabelledWrite[AverageValueOfTransactions] = deriveLabelledWrite
 }
 
+/**
+ * I intended to model categories as an ADT, but I ran out of time.
+ */
 sealed trait TransactionCategory extends EnumEntry
 
 object TransactionCategory extends Enum[TransactionCategory] with CirceEnum[TransactionCategory] {
