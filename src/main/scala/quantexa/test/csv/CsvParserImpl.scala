@@ -1,26 +1,31 @@
 package quantexa.test.csv
 
 import cats.effect.unsafe.implicits.global
-import cats.effect.{Async, ExitCode, IO, IOApp, Resource, Sync}
+import cats.effect.{IO, Resource}
 import cats.implicits.catsSyntaxTuple3Parallel
 import io.chrisdavenport.cormorant
+import io.chrisdavenport.cormorant.LabelledWrite
 import quantexa.test.models.{AverageValueOfTransactions, StatisticsFromPreviousDays, TotalTransactionsPerDay, Transaction}
 
 import scala.annotation.tailrec
-import scala.io.Source
+import scala.io.{BufferedSource, Source}
 import quantexa.test.utils.MathsUtils._
+
+import java.nio.file.Path
 
 object CsvParserImpl extends App {
 
   private val fileName = "/Users/lg/IdeaProjects/coin-chaser/src/main/scala/quantexa/test/resources/transactions.csv"
-  private val transcationParser = new CsvParser[Transaction]{}
-  private val totalTransactionsPerDayParser = new CsvParser[TotalTransactionsPerDay] {}
-  private val averageValueOfTransactionsParser = new CsvParser[AverageValueOfTransactions] {}
-  private val statisticsFromPreviousDaysParser = new CsvParser[StatisticsFromPreviousDays] {}
-  private val transactionslines: String = Source.fromFile(fileName).mkString("")
+  private val transactionParser = new CsvParser[Transaction]{}
+  private implicit val totalTransactionsPerDayParser: CsvParser[TotalTransactionsPerDay] = new CsvParser[TotalTransactionsPerDay] {}
+  private implicit val averageValueOfTransactionsParser: CsvParser[AverageValueOfTransactions] = new CsvParser[AverageValueOfTransactions] {}
+  private implicit val statisticsFromPreviousDaysParser: CsvParser[StatisticsFromPreviousDays] = new CsvParser[StatisticsFromPreviousDays] {}
+  private val transactionLines = Source.fromFile(fileName)
+
+  val sourceHandling: Resource[IO, BufferedSource] = Resource.make(IO.blocking(transactionLines))(source => IO.blocking(source.close()))
 
   def totalTransactionValueByDay(csv: String): Either[cormorant.Error, List[TotalTransactionsPerDay]] =
-    transcationParser.readCsv(csv).map {
+    transactionParser.readCsv(csv).map {
       groupByTransactionDay(_).map { keyValuePair =>
         val day = keyValuePair._1
         val transactionAmounts = keyValuePair._2
@@ -30,7 +35,7 @@ object CsvParserImpl extends App {
   }
 
   def averageTransactionValueForAnAccountByCategory(csv: String): Either[cormorant.Error, List[AverageValueOfTransactions]] =
-    transcationParser.readCsv(csv).map {
+    transactionParser.readCsv(csv).map {
     transactions =>
 
       val categoryAndTransactionValueByAccountId: Map[String, List[(String, Float)]] = groupByAccountId(transactions)
@@ -46,7 +51,7 @@ object CsvParserImpl extends App {
   }
 
   def getStatisticsFromPrevious5Days(csv: String): Either[cormorant.Error, List[StatisticsFromPreviousDays]] =
-    transcationParser.readCsv(csv).map {
+    transactionParser.readCsv(csv).map {
     transactions =>
       val transactionsByAccountId = transactions.groupBy(_.accountId)
       transactionsByAccountId.map{
@@ -69,17 +74,18 @@ object CsvParserImpl extends App {
     }
   }
 
-  val q1 = totalTransactionValueByDay(transactionslines).toOption.getOrElse(Nil)
-  val q2 = averageTransactionValueForAnAccountByCategory(transactionslines).toOption.getOrElse(Nil)
-  val q3 = getStatisticsFromPrevious5Days(transactionslines).toOption.getOrElse(Nil)
+  val finalAnswers = for {
+    source <- sourceHandling
+    transactionLines = source.mkString("")
+    question1 = writeAnswerToFile[TotalTransactionsPerDay]("question1", totalTransactionValueByDay(transactionLines))
+    question2 = writeAnswerToFile[AverageValueOfTransactions]("question2", averageTransactionValueForAnAccountByCategory(transactionLines))
+    question3 = writeAnswerToFile[StatisticsFromPreviousDays]("question3", getStatisticsFromPrevious5Days(transactionLines))
+  } yield (question1, question2, question3).parTupled
 
-  def provideQuantexaWithSweetSweetAnswers = {
-    (IO(totalTransactionsPerDayParser.writeToFile("question1", q1)),
-    IO(averageValueOfTransactionsParser.writeToFile("question2", q2)),
-    IO(statisticsFromPreviousDaysParser.writeToFile("question3", q3))).parTupled
-  }
+  finalAnswers.use(identity).unsafeRunSync()
 
-  provideQuantexaWithSweetSweetAnswers.unsafeRunSync()
+  private def writeAnswerToFile[A](fileName: String, f: Either[Throwable, List[A]])(implicit csvParser: CsvParser[A], labelledWrite: LabelledWrite[A]): IO[Path] =
+    IO.fromEither(f.map(csvParser.writeToFile(fileName, _)))
 
   private def groupByTransactionDay(transactions: List[Transaction]): Map[Int, List[Float]] =
     transactions.groupMap(_.transactionDay)(_.transactionAmount)
