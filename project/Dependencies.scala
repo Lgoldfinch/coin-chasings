@@ -9,11 +9,13 @@ object Dependencies {
     val CatsEffect        = "3.3.0"
     val Doobie = "1.0.0-RC1"
     val Enumeratum = "1.7.0"
+    val Fs2Kafka          = "2.2.0"
     val Http4s = "0.23.6"
+    val Logback           = "1.2.10"
+    val Log4Cats          = "2.2.0"
+    val NewType           = "0.4.4"
     val PureConfig = "0.17.0"
     val Refined = "0.9.27"
-    val NewType           = "0.4.4"
-    val Fs2Kafka          = "2.2.0"
 
     // Test
     val TestContainers = "0.39.12"
@@ -49,6 +51,11 @@ object Dependencies {
     "org.http4s"      %% "http4s-circe",
     "org.http4s"      %% "http4s-dsl"
   ).map(_ % Version.Http4s)
+
+  val Logging = List(
+    "ch.qos.logback" % "logback-classic" % Version.Logback % Runtime,
+    "org.typelevel" %% "log4cats-slf4j"  % Version.Log4Cats
+  )
 
   val NewType = List(
     "io.estatico" %% "newtype" % Version.NewType

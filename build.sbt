@@ -12,6 +12,7 @@ lazy val coinChaser = (project in file(".")).settings(
     Dependencies.CatsEffect,
     Dependencies.Circe,
     Dependencies.NewType,
+    Dependencies.Logging,
     Dependencies.Refined,
     Dependencies.PureConfig,
     Dependencies.Fs2Kafka,
