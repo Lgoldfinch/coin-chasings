@@ -61,47 +61,39 @@ object CsvParserImpl extends App {
      val yes: List[StatisticsOfTheDay] = transactionsByAccountIdAndDay.map{
                   case (dayAndAccountIdTuple, transactions) =>
                     calculateStatisticsForDay(dayAndAccountIdTuple._1, dayAndAccountIdTuple._2, transactions)
-                }.toList
+                }.toList.sortWith(_.day < _.day)
       // could group by account here? Would give all days alongside an account
 
-      yes.groupBy(_.accountId).map(_._2.foldLeft(List.empty[StatisticsOfTheDay]){
+      val grouped = yes.groupBy(_.accountId)
+
+      // we want to skip the day we're on but carry forward the previous
+        grouped.map(_._2.foldLeft[(List[StatisticsOfTheDay], List[StatisticsOfTheDay])]((List.empty[StatisticsOfTheDay], List.empty[StatisticsOfTheDay])){
         (acc, statsForDay) =>
-        val last5Days: List[StatisticsOfTheDay] = acc.dropWhile(_.day < statsForDay.day - 4)
+          val properAcc = acc._1
+          val last5Days = acc._2
+          val l5Days: List[StatisticsOfTheDay] = last5Days.dropWhile(_.day < statsForDay.day - 4)
+          val acccc: List[StatisticsOfTheDay] = properAcc ++ List(calculateMore(statsForDay, l5Days))
+          val lasssssst: List[StatisticsOfTheDay] =  l5Days ++ List(statsForDay)
 
-          println(statsForDay)
-          println(last5Days + " last 5 days")
-          println(calculateMore(statsForDay, last5Days) + " calculate result")
-
-          acc ++ List(calculateMore(statsForDay, last5Days))
-      }).toList.flatten.sortWith(_.day < _.day) // we just need to calculate the previous day and we're sorted
+          (acccc, lasssssst)
+      }).toList.map(_._1).flatten//.sortWith(_.day < _.day) // we just need to calculate the previous day and we're sorted
   }
 
+  // we dont want to store the value of the previous days
+
   def calculateMore(current: StatisticsOfTheDay, last5Days: List[StatisticsOfTheDay]) = {
-    val l = last5Days ++ List(current)
-    val maximumTransactionValue = l.map(_.maximum).maxOption.getOrElse(0f)
-    val averageTransactionValue = mean(l.map(_.average)).getOrElse(0f)
-    val aaTotalValue = l.map(_.aaTotalValue).sum
-    val ccTotalValue = l.map(_.ccTotalValue).sum
-    val ffTotalValue = l.map(_.ffTotalValue).sum
+    val maximumTransactionValue = last5Days.map(_.maximum).maxOption.getOrElse(0f)
+    val averageTransactionValue = mean(last5Days.map(_.average)).getOrElse(0f)
+    val aaTotalValue = last5Days.map(_.aaTotalValue).sum
+    val ccTotalValue = last5Days.map(_.ccTotalValue).sum
+    val ffTotalValue = last5Days.map(_.ffTotalValue).sum
 
     StatisticsOfTheDay(current.day, current.accountId, maximumTransactionValue, averageTransactionValue, aaTotalValue, ccTotalValue, ffTotalValue)
-
   }
 
 
   private def sumByTransactionCategory(last5DaysOfTransactions: List[Transaction], category: String): Float =
     last5DaysOfTransactions.filter(_.category == category).map(_.transactionAmount).sum
-
-//def yes(previousDaysOfTransactions: List[Transaction]) = {
-//  val previousDaysTransactionAmounts = previousDaysOfTransactions.map(_.transactionAmount)
-//  val maximumTransactionValue = previousDaysTransactionAmounts.maxOption.getOrElse(0f)
-//  val averageTransactionValue = mean(previousDaysTransactionAmounts).getOrElse(0f)
-//  val aaTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "AA")
-//  val ccTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "CC")
-//  val ffTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "FF")
-//
-//  StatisticsFromPreviousDays()
-//}
 
   def calculateStatisticsForDay(day: Int, accountId: String, currentDayTransactions: List[Transaction]) = {
   val max = currentDayTransactions.map(_.transactionAmount).maxOption.getOrElse(0f)
