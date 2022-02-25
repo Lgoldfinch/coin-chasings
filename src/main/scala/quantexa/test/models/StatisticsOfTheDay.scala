@@ -30,6 +30,10 @@ object StatisticsOfTheDay {
       ffTotalValue)
 
   }
+
+  def defaultDay1StatisticOfTheDay(accountId: String): StatisticsOfTheDay = {
+    StatisticsOfTheDay(1, accountId, 0, 0, 0, 0, 0)
+  }
 // def apply(transaction: Transaction, previousDaysOfTransactions: List[Transaction]): StatisticsOfTheDay = {
 //    val previousDaysTransactionAmounts = previousDaysOfTransactions.map(_.transactionAmount)
 //    val maximumTransactionValue = previousDaysTransactionAmounts.maxOption.getOrElse(0f)
