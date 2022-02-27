@@ -5,53 +5,33 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.chrisdavenport.cormorant.generic.semiauto._
 import io.chrisdavenport.cormorant.implicits._
-
 import quantexa.test.utils.MathsUtils.mean
+import quantexa.test.utils.floatFromListWithDefault
 
 final case class StatisticsOfTheDay(day: Int, accountId: String, maximum: Float, average: Float, aaTotalValue: Float, ccTotalValue: Float, ffTotalValue: Float)
 
 object StatisticsOfTheDay {
+  def calculatesStatsOfTheDayUsingPast(current: StatisticsOfTheDay, last5Days: List[StatisticsOfTheDay]): StatisticsOfTheDay = {
+    val maximumTransactionValue = floatFromListWithDefault(last5Days)(_.maximum, _.maxOption)
+    val averageTransactionValue = floatFromListWithDefault(last5Days)(_.average, mean)
 
-  def apply(transaction: Transaction, previousDaysOfTransactions: List[Transaction]): StatisticsOfTheDay = {
-    val previousDaysTransactionAmounts = previousDaysOfTransactions.map(_.transactionAmount)
-    val maximumTransactionValue = previousDaysTransactionAmounts.maxOption.getOrElse(0f)
-    val averageTransactionValue = mean(previousDaysTransactionAmounts).getOrElse(0f)
-    val aaTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "AA")
-    val ccTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "CC")
-    val ffTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "FF")
+    val aaTotalValue = last5Days.map(_.aaTotalValue).sum
+    val ccTotalValue = last5Days.map(_.ccTotalValue).sum
+    val ffTotalValue = last5Days.map(_.ffTotalValue).sum
 
-    StatisticsOfTheDay(
-      transaction.transactionDay,
-      transaction.accountId,
-      maximumTransactionValue,
-      averageTransactionValue,
-      aaTotalValue,
-      ccTotalValue,
-      ffTotalValue)
-
+    StatisticsOfTheDay(current.day, current.accountId, maximumTransactionValue, averageTransactionValue, aaTotalValue, ccTotalValue, ffTotalValue)
   }
 
-  def defaultDay1StatisticOfTheDay(accountId: String): StatisticsOfTheDay = {
-    StatisticsOfTheDay(1, accountId, 0, 0, 0, 0, 0)
+  def apply(day: Int, accountId: String, currentDayTransactions: List[Transaction]): StatisticsOfTheDay = {
+    val maximumTransactionValue = floatFromListWithDefault(currentDayTransactions)(_.transactionAmount, _.maxOption)
+    val averageTransactionValue = floatFromListWithDefault(currentDayTransactions)(_.transactionAmount, mean)
+
+    val aaTotalValue = sumByTransactionCategory(currentDayTransactions, "AA")
+    val ccTotalValue = sumByTransactionCategory(currentDayTransactions, "CC")
+    val ffTotalValue = sumByTransactionCategory(currentDayTransactions, "FF")
+
+    StatisticsOfTheDay(day, accountId, maximumTransactionValue, averageTransactionValue, aaTotalValue, ccTotalValue, ffTotalValue)
   }
-// def apply(transaction: Transaction, previousDaysOfTransactions: List[Transaction]): StatisticsOfTheDay = {
-//    val previousDaysTransactionAmounts = previousDaysOfTransactions.map(_.transactionAmount)
-//    val maximumTransactionValue = previousDaysTransactionAmounts.maxOption.getOrElse(0f)
-//    val averageTransactionValue = mean(previousDaysTransactionAmounts).getOrElse(0f)
-//    val aaTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "AA")
-//    val ccTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "CC")
-//    val ffTotalValue = sumByTransactionCategory(previousDaysOfTransactions, "FF")
-//
-//    StatisticsOfTheDay(
-//      transaction.transactionDay,
-//      transaction.accountId,
-//      maximumTransactionValue,
-//      averageTransactionValue,
-//      aaTotalValue,
-//      ccTotalValue,
-//      ffTotalValue)
-//
-//  }
 
   private def sumByTransactionCategory(last5DaysOfTransactions: List[Transaction], category: String): Float =
     last5DaysOfTransactions.filter(_.category == category).map(_.transactionAmount).sum
