@@ -5,7 +5,6 @@ import cats.effect.{IO, Resource}
 import cats.implicits.catsSyntaxTuple3Parallel
 import io.chrisdavenport.cormorant
 import io.chrisdavenport.cormorant.LabelledWrite
-import quantexa.test.models.StatisticsOfTheDay.defaultStatisticsOfTheDay
 import quantexa.test.models.{AverageValueOfTransactions, StatisticsOfTheDay, TotalTransactionsPerDay, Transaction}
 
 import scala.annotation.tailrec
@@ -51,70 +50,64 @@ object CsvParserImpl extends App {
       }.toList.flatten
   }
 
-
   def getStatisticsFromPrevious5Days(csv: String): Either[cormorant.Error, List[StatisticsOfTheDay]] =
-  transactionParser.readCsv(csv).map {
+    transactionParser.readCsv(csv).map {
     transactions =>
 
-        val transactionsByAccountIdAndDay = transactions.groupBy(transaction => (transaction.transactionDay, transaction.accountId))
+      val transactionsByAccountIdAndDay = transactions.groupBy(transaction => (transaction.transactionDay, transaction.accountId))
 
-        val transactionsToStatisticsOfTheDay: List[StatisticsOfTheDay] = transactionsByAccountIdAndDay.map {
-          case (dayAndAccountIdTuple, transactions) =>
-            calculateStatisticsForDay(dayAndAccountIdTuple._1, dayAndAccountIdTuple._2, transactions)
-        }.toList.sortWith(_.day < _.day)
+      // we have a bunch of days added together.
+     val yes: List[StatisticsOfTheDay] = transactionsByAccountIdAndDay.map{
+                  case (dayAndAccountIdTuple, transactions) =>
+                    calculateStatisticsForDay(dayAndAccountIdTuple._1, dayAndAccountIdTuple._2, transactions)
+                }.toList.sortWith(_.day < _.day)
+      // could group by account here? Would give all days alongside an account
 
-        val statisticsForEachDayByGroupId: Map[String, List[StatisticsOfTheDay]] = transactionsToStatisticsOfTheDay.groupBy(_.accountId)
+      val statisticsForEachDayByGroupId: Map[String, List[StatisticsOfTheDay]] = yes.groupBy(_.accountId)
 
-        statisticsForEachDayByGroupId.map(_._2.foldLeft[(List[StatisticsOfTheDay], List[StatisticsOfTheDay])]((List.empty[StatisticsOfTheDay], List.empty[StatisticsOfTheDay])) {
-          case ((rowsForCsvOutput, historyOfDays), statsForDay) =>
+      // we want to skip the day we're on but carry forward the previous
+      statisticsForEachDayByGroupId.map(_._2.foldLeft[(List[StatisticsOfTheDay], List[StatisticsOfTheDay])]((List.empty[StatisticsOfTheDay], List.empty[StatisticsOfTheDay])){
+        (acc, statsForDay) =>
+          val properAcc = acc._1
+          val last5Days = acc._2
+          val l5Days: List[StatisticsOfTheDay] = last5Days.dropWhile(_.day < statsForDay.day - 4)
+          val acccc: List[StatisticsOfTheDay] = properAcc ++ List(calculateMore(statsForDay, l5Days))
+          val lasssssst: List[StatisticsOfTheDay] =  l5Days ++ List(statsForDay)
 
-            val numberOfDaysMissing = statsForDay.day - historyOfDays.map(_.day).headOption.getOrElse(0)
-            val lastDayWithTransactions = statsForDay.day - numberOfDaysMissing
-//            val pluggedGaps = plugTheGaps(statsForDay, lastDayWithTransactions, numberOfDaysMissing, historyOfDays, rowsForCsvOutput)
-            val calculatedStats = List(calculateStatisticsFromPast5Days(statsForDay, historyOfDays))
-//            val nextRowsForCsvOutput: List[StatisticsOfTheDay] = rowsForCsvOutput ++ pluggedGaps ++ calculatedStats
-            val nextRowsForCsvOutput: List[StatisticsOfTheDay] = rowsForCsvOutput ++ calculatedStats
-            val nextLast5Days: List[StatisticsOfTheDay] = List(statsForDay) ++ historyOfDays
-
-            (nextRowsForCsvOutput, nextLast5Days)
-        }).toList.flatMap(_._1).sortWith(_.day < _.day)
-    }
-
-  @tailrec
-  def plugTheGaps(current: StatisticsOfTheDay, lastDayWithTransactions: Int, numberOfMissingDays: Int, history: List[StatisticsOfTheDay], historyWithoutGapsPluggedIn: List[StatisticsOfTheDay]): List[StatisticsOfTheDay] = {
-    val currentDay = current.day
-    val accountId  = current.accountId
-
-    if(currentDay == 2 && numberOfMissingDays == 2)
-      List(defaultStatisticsOfTheDay(1, accountId))
-    else if(numberOfMissingDays >= 1) {
-      val daysWithin4DayRollingWindow = history.dropWhile(_.day < currentDay - numberOfMissingDays - 4)
-
-      val statistics = calculateStatisticsFromPast5Days(currentDay - numberOfMissingDays + 1, current.accountId, daysWithin4DayRollingWindow)
-      plugTheGaps(current, numberOfMissingDays - 1, numberOfMissingDays, history ++ List(statistics), historyWithoutGapsPluggedIn ++ List(statistics))
-    } else history
+            (acccc, lasssssst)
+        }).toList.flatMap(_._1).sortWith(_.day < _.day) // we just need to calculate the previous day and we're sorted
   }
 
-  def calculateStatisticsFromPast5Days(current: StatisticsOfTheDay, last5Days: List[StatisticsOfTheDay]) = {
-    val daysWithin4DayRollingWindow: List[StatisticsOfTheDay] = last5Days.dropWhile(_.day < current.day - 4)
+//@tailrec
+//  def churn(difference: Int, latest: StatisticsOfTheDay, acc: List[StatisticsOfTheDay]): List[StatisticsOfTheDay] =
+//    if(difference <= 1) acc
+//    else {
+//      val nextDay = difference - 1 /// hmm
+//
+//      if(acc.isEmpty) {
+//        val defaultStatOfTheDay = List(defaultDay1StatisticOfTheDay(latest.accountId)) ++ acc
+//        churn(nextDay, latest, defaultStatOfTheDay)
+//      }
+//      else {
+//        val fillGap = latest.copy(day = latest.day - nextDay)
+//        val removeDaysBeforeRollingWindow: List[StatisticsOfTheDay] = acc.dropWhile(_.day < fillGap.day - 4)
+//        val newAcc = List(fillGap) ++ removeDaysBeforeRollingWindow
+//
+////        val calculateNewStatistics = List(calculateMore(fillGap, newAcc))
+//        churn(nextDay, latest, )
+//      }
+//    }
 
-    val maximumTransactionValue = daysWithin4DayRollingWindow.map(_.maximum).maxOption.getOrElse(0f)
-    val averageTransactionValue = mean(daysWithin4DayRollingWindow.map(_.average)).getOrElse(0f)
-    val aaTotalValue = daysWithin4DayRollingWindow.map(_.aaTotalValue).sum
-    val ccTotalValue = daysWithin4DayRollingWindow.map(_.ccTotalValue).sum
-    val ffTotalValue = daysWithin4DayRollingWindow.map(_.ffTotalValue).sum
+  // we dont want to store the value of the previous days
 
-    StatisticsOfTheDay(current.day, current.accountId, maximumTransactionValue, averageTransactionValue, aaTotalValue, ccTotalValue, ffTotalValue)
-  }
-
-  def calculateStatisticsFromPast5Days(day: Int, accountId: String, last5Days: List[StatisticsOfTheDay]) = {
+  def calculateMore(current: StatisticsOfTheDay, last5Days: List[StatisticsOfTheDay]) = {
     val maximumTransactionValue = last5Days.map(_.maximum).maxOption.getOrElse(0f)
     val averageTransactionValue = mean(last5Days.map(_.average)).getOrElse(0f)
     val aaTotalValue = last5Days.map(_.aaTotalValue).sum
     val ccTotalValue = last5Days.map(_.ccTotalValue).sum
     val ffTotalValue = last5Days.map(_.ffTotalValue).sum
 
-    StatisticsOfTheDay(day, accountId, maximumTransactionValue, averageTransactionValue, aaTotalValue, ccTotalValue, ffTotalValue)
+    StatisticsOfTheDay(current.day, current.accountId, maximumTransactionValue, averageTransactionValue, aaTotalValue, ccTotalValue, ffTotalValue)
   }
 
 
