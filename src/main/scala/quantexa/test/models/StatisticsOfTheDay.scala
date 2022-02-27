@@ -31,8 +31,8 @@ object StatisticsOfTheDay {
 
   }
 
-  def defaultDay1StatisticOfTheDay(accountId: String): StatisticsOfTheDay = {
-    StatisticsOfTheDay(1, accountId, 0, 0, 0, 0, 0)
+  def defaultStatisticsOfTheDay(day: Int, accountId: String): StatisticsOfTheDay = {
+    StatisticsOfTheDay(day, accountId, 0, 0, 0, 0, 0)
   }
 // def apply(transaction: Transaction, previousDaysOfTransactions: List[Transaction]): StatisticsOfTheDay = {
 //    val previousDaysTransactionAmounts = previousDaysOfTransactions.map(_.transactionAmount)
