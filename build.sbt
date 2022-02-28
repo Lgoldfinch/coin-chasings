@@ -11,10 +11,13 @@ lazy val coinChaser = (project in file(".")).settings(
     Dependencies.Cats,
     Dependencies.CatsEffect,
     Dependencies.Circe,
+    Dependencies.CormorantCSV,
+    Dependencies.Doobie,
+    Dependencies.Enumeratum,
     Dependencies.NewType,
     Dependencies.Refined,
     Dependencies.PureConfig,
-    Dependencies.Fs2Kafka
+    Dependencies.Fs2Kafka,
   ) ++ List.concat(
     Dependencies.CatsEffectTest,
     Dependencies.Http4sTest,
