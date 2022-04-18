@@ -2,7 +2,7 @@ package shopping.cart.models
 
 import io.estatico.newtype.macros.newtype
 import java.util.UUID
-
+import squants.market.Money
 
 @newtype case class ItemId(value: UUID)
 @newtype case class ItemName(value: String)

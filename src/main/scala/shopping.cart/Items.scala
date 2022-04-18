@@ -1,6 +1,6 @@
 package shopping.cart
 
-import shopping.cart.models.BrandName
+import shopping.cart.models.{BrandName, CreateItem, Item, ItemId, UpdateItem}
 
 trait Items[F[_]] {
   def findAll: F[List[Item]]

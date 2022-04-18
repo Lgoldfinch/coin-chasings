@@ -16,6 +16,7 @@ object Dependencies {
     val NewType           = "0.4.4"
     val PureConfig = "0.17.0"
     val Refined = "0.9.27"
+    val Squants = "1.6.0"
 
     // Test
     val TestContainers = "0.39.12"
@@ -72,6 +73,10 @@ object Dependencies {
 
   val Refined = List(
     "eu.timepit" %% "refined" % Version.Refined
+  )
+
+  val Squants = List(
+    "org.typelevel"  %% "squants"  % Version.Squants
   )
 
   val Logback = List(

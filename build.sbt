@@ -13,9 +13,14 @@ lazy val coinChaser = (project in file(".")).settings(
     Dependencies.Circe,
     Dependencies.NewType,
     Dependencies.Logging,
-    Dependencies.Refined,
     Dependencies.PureConfig,
+    Dependencies.Refined,
+    Dependencies.Squants,
     Dependencies.Fs2Kafka,
+    List("tf.tofu" %% "derevo-cats"        % "0.12.5"),
+    List("tf.tofu" %% "derevo-cats-tagless" % "0.12.5"),
+    List("tf.tofu" %% "derevo-circe-magnolia" % "0.12.5"),
+    List("tf.tofu" %% "tofu-core-higher-kind" % "0.10.2")
   ) ++ List.concat(
     Dependencies.CatsEffectTest,
     Dependencies.Http4sTest,
